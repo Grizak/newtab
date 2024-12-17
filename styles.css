@@ -34,7 +34,7 @@ body {
 
 /* Input styles */
 .url-input {
-  width: 100%;
+  width: 360px;
   padding: 10px 15px;
   font-size: 1rem;
   border: 2px solid #ddd;
