@@ -69,3 +69,6 @@ body {
   background-color: #003f7f;
 }
 
+#message {
+  color: red;
+}
