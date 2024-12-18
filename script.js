@@ -27,7 +27,7 @@ function navigateToURL() {
   clearMessage(); // Clear the message from a previous search
 
   if (!inputValue) {
-    displayMessage('Please enter a URL or search term!', "red");
+    displayMessage('Please enter a URL or search term!', "error");
     return;
   }
 
