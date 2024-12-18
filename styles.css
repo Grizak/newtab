@@ -23,15 +23,6 @@ body {
   width: 100%;
 }
 
-/* Label styles */
-.url-label {
-  font-size: 1.2rem;
-  font-weight: bold;
-  display: block;
-  margin-bottom: 10px;
-  color: #555;
-}
-
 /* Input styles */
 .url-input {
   width: 360px;
