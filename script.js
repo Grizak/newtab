@@ -55,7 +55,7 @@ async function navigateToURL() {
   clearMessage();
 
   if (!inputValue) {
-    displayMessage('Please enter a URL or search term!', error);
+    displayMessage('Please enter a URL or search term!', "error");
     return;
   }
 
