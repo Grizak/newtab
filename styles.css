@@ -69,6 +69,6 @@ body {
   background-color: #003f7f;
 }
 
-#message {
+.error {
   color: red;
 }
