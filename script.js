@@ -2,7 +2,6 @@
 const urlInput = document.getElementById('urlinput');
 const goButton = document.getElementById('goButton');
 const messageElement = document.getElementById('message');
-let toRedirectUrl;
 
 // Function to fetch the list of valid TLDs from the IANA database
 async function fetchValidTLDs() {
@@ -71,7 +70,7 @@ async function navigateToURL() {
     const validUrl = inputValue.startsWith('http://') || inputValue.startsWith('https://') 
       ? inputValue 
       : `https://${inputValue}`;
-    toRedirectUrl = validUrl.toLowerCase();
+    const toRedirectUrl = validUrl.toLowerCase();
     window.open(toRedirectUrl, '_blank');
   } else {
     // If no valid TLD, perform Ecosia search
