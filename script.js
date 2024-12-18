@@ -22,11 +22,11 @@ function navigateToURL() {
     const validUrl = inputValue.startsWith('http://') || inputValue.startsWith('https://') 
       ? inputValue 
       : `https://${inputValue}`;
-    window.open(validUrl, "_blank");
+    window.open(validUrl);
   } else {
     // If not a valid URL, redirect to Ecosia search
     const searchQuery = encodeURIComponent(inputValue); // Encode the search query
-    window.location.href = `https://www.ecosia.org/search?q=${searchQuery}`;
+    window.open(`https://www.ecosia.org/search?q=${searchQuery}`);
   }
 }
 
