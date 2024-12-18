@@ -59,7 +59,7 @@ function displayMessage(message, classToAdd) {
 }
 
 function clearMessage() {
-  document.getElementById('message').textcontent = '';
+  document.getElementById('message').textContent = '';
   document.getElementById('message').classList = '';
 }
 
