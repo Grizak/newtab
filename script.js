@@ -2,56 +2,66 @@
 const urlInput = document.getElementById('urlinput');
 const goButton = document.getElementById('goButton');
 
-// Function to validate if a string is a valid URL
-function isValidURL(url) {
+// List of valid TLDs (Top-Level Domains)
+const validTLDs = ['com', 'org', 'net', 'io', 'co', 'edu']; // Add more TLDs as needed
+
+// Function to extract the TLD from a URL
+function extractTLD(url) {
   try {
-    new URL(url);
-    return true;
-  } catch {
-    return false;
+    const parsedUrl = new URL(url.includes('://') ? url : `https://${url}`);
+    const hostnameParts = parsedUrl.hostname.split('.');
+
+    // If there are at least two parts (e.g., 'example.com'), return the last part as the TLD
+    if (hostnameParts.length > 1) {
+      return hostnameParts[hostnameParts.length - 1];
+    }
+  } catch (e) {
+    return null; // If the URL is invalid, return null
   }
+  return null; // If no TLD found, return null
 }
 
-// Function to navigate to the entered URL or Ecosia search
+// Function to validate the URL or search term
 function navigateToURL() {
   const inputValue = urlInput.value.trim(); // Get the input value and trim spaces
-  clearMessage();
+  clearMessage(); // Clear the message from a previous search
 
   if (!inputValue) {
-    displayMessage('Please enter a URL or search term!');
+    displayMessage('Please enter a URL or search term!', "red");
     return;
   }
 
-  if (isValidURL(inputValue)) {
-    // If valid, ensure the URL has a scheme
+  // Check if the input is a valid TLD or a search term
+  const tld = extractTLD(inputValue);
+
+  if (tld && validTLDs.includes(tld)) {
+    // If TLD is valid, construct a full URL
     const validUrl = inputValue.startsWith('http://') || inputValue.startsWith('https://') 
       ? inputValue 
       : `https://${inputValue}`;
     window.open(validUrl, '_blank');
   } else {
-    // If not a valid URL, redirect to Ecosia search
+    // If no valid TLD, perform Ecosia search
     const searchQuery = encodeURIComponent(inputValue); // Encode the search query
     window.open(`https://www.ecosia.org/search?q=${searchQuery}`, '_blank');
   }
 }
 
 // Display an error message
-function displayMessage(message) {
+function displayMessage(message, classToAdd) {
   const messageElement = document.getElementById('message');
   if (messageElement) {
     messageElement.textContent = message;
+    messageElement.classList.add(classToAdd);
   } else {
     alert(message);
   }
 }
 
 function clearMessage() {
-  try {
-    document.getElementById('message').textContent = '';
-  } catch (err) {
-    console.error(err);
-  }
-};
+  document.getElementById('message').textcontent = '';
+  document.getElementById('message').classList = '';
+}
 
 // Add event listeners
 goButton.addEventListener('click', navigateToURL);
