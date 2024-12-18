@@ -70,7 +70,8 @@ async function navigateToURL() {
     const validUrl = inputValue.startsWith('http://') || inputValue.startsWith('https://') 
       ? inputValue 
       : `https://${inputValue}`;
-    window.open(validUrl, '_blank');
+    toRedirectUrl = validUrl.toLowerCase();
+    window.open(toRedirectUrl, '_blank');
   } else {
     // If no valid TLD, perform Ecosia search
     const searchQuery = encodeURIComponent(inputValue); // Encode the search query
