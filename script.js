@@ -44,7 +44,7 @@ function displayMessage(message, classToAdd) {
   }
 }
 
-function clearMessage() {'
+function clearMessage() {
   messageElement.textContent = '';
   messageElement.classList = '';
 }
