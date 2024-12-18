@@ -2,6 +2,7 @@
 const urlInput = document.getElementById('urlinput');
 const goButton = document.getElementById('goButton');
 const messageElement = document.getElementById('message');
+let toRedirectUrl;
 
 // Function to fetch the list of valid TLDs from the IANA database
 async function fetchValidTLDs() {
