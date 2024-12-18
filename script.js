@@ -22,7 +22,7 @@ function navigateToURL() {
     const validUrl = inputValue.startsWith('http://') || inputValue.startsWith('https://') 
       ? inputValue 
       : `https://${inputValue}`;
-    window.location.href = validUrl; // Navigate to the valid URL
+    window.open(validUrl, "_blank");
   } else {
     // If not a valid URL, redirect to Ecosia search
     const searchQuery = encodeURIComponent(inputValue); // Encode the search query
