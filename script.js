@@ -15,6 +15,7 @@ function isValidURL(url) {
 // Function to navigate to the entered URL or Ecosia search
 function navigateToURL() {
   const inputValue = urlInput.value.trim(); // Get the input value and trim spaces
+  clearMessage();
 
   if (!inputValue) {
     displayMessage('Please enter a URL or search term!');
@@ -43,6 +44,14 @@ function displayMessage(message) {
     alert(message);
   }
 }
+
+function clearMessage() {
+  try {
+    document.getElementById('message').textContent = '';
+  } catch (err) {
+    console.error(err);
+  }
+};
 
 // Add event listeners
 goButton.addEventListener('click', navigateToURL);
