@@ -1,6 +1,7 @@
 // Select the input and button elements
 const urlInput = document.getElementById('urlinput');
 const goButton = document.getElementById('goButton');
+const messageElement = document.getElementById('message');
 
 // Function to fetch the list of valid TLDs from the IANA database
 async function fetchValidTLDs() {
@@ -34,21 +35,27 @@ function extractTLD(url) {
 }
 
 // Function to display a message
-function displayMessage(message) {
-  const messageElement = document.getElementById('message');
+function displayMessage(message, classToAdd) {
   if (messageElement) {
     messageElement.textContent = message;
+    messageElement.classList.add(classToAdd);
   } else {
     alert(message);
   }
 }
 
+function clearMessage() {'
+  messageElement.textContent = '';
+  messageElement.classList = '';
+}
+
 // Function to navigate to the URL or Ecosia search
 async function navigateToURL() {
   const inputValue = urlInput.value.trim(); // Get the input value and trim spaces
+  clearMessage();
 
   if (!inputValue) {
-    displayMessage('Please enter a URL or search term!');
+    displayMessage('Please enter a URL or search term!', error);
     return;
   }
 
