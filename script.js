@@ -2,8 +2,20 @@
 const urlInput = document.getElementById('urlinput');
 const goButton = document.getElementById('goButton');
 
-// List of valid TLDs (Top-Level Domains)
-const validTLDs = ['com', 'org', 'net', 'io', 'co', 'edu']; // Add more TLDs as needed
+// Function to fetch the list of valid TLDs from the IANA database
+async function fetchValidTLDs() {
+  const response = await fetch('https://data.iana.org/TLD/tlds-alpha-by-domain.txt');
+  
+  if (!response.ok) {
+    console.error('Failed to fetch TLDs');
+    return [];
+  }
+
+  const text = await response.text();
+  // Split the text by new lines and remove any lines that start with a '#'
+  const tlds = text.split('\n').filter(line => line && !line.startsWith('#'));
+  return tlds.map(tld => tld.toLowerCase()); // Convert all TLDs to lowercase
+}
 
 // Function to extract the TLD from a URL
 function extractTLD(url) {
@@ -21,15 +33,27 @@ function extractTLD(url) {
   return null; // If no TLD found, return null
 }
 
-// Function to validate the URL or search term
-function navigateToURL() {
+// Function to display a message
+function displayMessage(message) {
+  const messageElement = document.getElementById('message');
+  if (messageElement) {
+    messageElement.textContent = message;
+  } else {
+    alert(message);
+  }
+}
+
+// Function to navigate to the URL or Ecosia search
+async function navigateToURL() {
   const inputValue = urlInput.value.trim(); // Get the input value and trim spaces
-  clearMessage(); // Clear the message from a previous search
 
   if (!inputValue) {
-    displayMessage('Please enter a URL or search term!', "error");
+    displayMessage('Please enter a URL or search term!');
     return;
   }
+
+  // Get the valid TLDs
+  const validTLDs = await fetchValidTLDs();
 
   // Check if the input is a valid TLD or a search term
   const tld = extractTLD(inputValue);
@@ -45,22 +69,6 @@ function navigateToURL() {
     const searchQuery = encodeURIComponent(inputValue); // Encode the search query
     window.open(`https://www.ecosia.org/search?q=${searchQuery}`, '_blank');
   }
-}
-
-// Display an error message
-function displayMessage(message, classToAdd) {
-  const messageElement = document.getElementById('message');
-  if (messageElement) {
-    messageElement.textContent = message;
-    messageElement.classList.add(classToAdd);
-  } else {
-    alert(message);
-  }
-}
-
-function clearMessage() {
-  document.getElementById('message').textContent = '';
-  document.getElementById('message').classList = '';
 }
 
 // Add event listeners
