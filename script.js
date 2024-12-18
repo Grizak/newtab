@@ -69,6 +69,9 @@ async function navigateToURL() {
     const searchQuery = encodeURIComponent(inputValue); // Encode the search query
     window.open(`https://www.ecosia.org/search?q=${searchQuery}`, '_blank');
   }
+
+  urlInput.value = ''; // Reset the input element to empty when loading url
+  urlInput.focus(); // Set the text marker to be on the input element
 }
 
 // Add event listeners
@@ -78,4 +81,9 @@ urlInput.addEventListener('keypress', (event) => {
     event.preventDefault(); // Prevent form submission
     navigateToURL();
   }
+});
+
+// Set focus on the search input when the page loads
+document.addEventListener('DOMContentLoaded', () => {
+  urlInput.focus();
 });
