@@ -91,6 +91,10 @@ urlInput.addEventListener('keypress', (event) => {
   }
 });
 
+urlInput.addEventListener('input', () => {
+  urlInput.focus()
+});
+
 // Set focus on the search input when the page loads
 document.addEventListener('DOMContentLoaded', () => {
   urlInput.focus();
