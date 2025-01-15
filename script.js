@@ -88,12 +88,15 @@ async function navigateToURL() {
       inputValue.startsWith("http://") || inputValue.startsWith("https://")
         ? inputValue
         : `https://${inputValue}`;
+
     validUrl = validUrl.split("/");
 
-    validUrl[0] = validUrl[0].toLowerCase();
+    validUrl[2] = validUrl[2].toLowerCase();
 
     const toRedirectUrl = validUrl.join("/");
     window.open(toRedirectUrl, "_blank");
+
+    console.log(validUrl, toRedirectUrl);
   } else {
     // If no valid TLD, perform Ecosia search
     const searchQuery = encodeURIComponent(inputValue); // Encode the search query
