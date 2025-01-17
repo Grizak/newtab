@@ -20,6 +20,15 @@ async function fetchValidTLDs() {
   return tlds.map((tld) => tld.toLowerCase()); // Convert all TLDs to lowercase
 }
 
+function isValidIPWithPort(input) {
+  const ipv4WithPortPattern =
+    /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(:(6553[0-5]|655[0-2][0-9]|65[0-4][0-9][0-9]|[0-5]?[0-9]{1,4}))?$/;
+  const ipv6WithPortPattern =
+    /^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}(([0-9]{1,3}\.){3,3}[0-9]{1,3})|([0-9a-fA-F]{1,4}:){1,4}:(([0-9]{1,3}\.){3,3}[0-9]{1,3}))(:(6553[0-5]|655[0-2][0-9]|65[0-4][0-9][0-9]|[0-5]?[0-9]{1,4}))?$/;
+
+  return ipv4WithPortPattern.test(input) || ipv6WithPortPattern.test(input);
+}
+
 // Function to extract the TLD from a URL
 function extractTLD(url) {
   try {
@@ -65,6 +74,18 @@ async function navigateToURL() {
     inputValue.startsWith("localhost") ||
     inputValue.startsWith("http://localhost")
   ) {
+    if (!inputValue.startsWith("http://")) {
+      inputValue = `http://${inputValue}`;
+    }
+
+    window.open(inputValue, "_blank");
+
+    urlInput.value = ""; // Reset the input element to empty when loading url
+    urlInput.focus(); // Set the text marker to be on the input element
+    return;
+  }
+
+  if (isValidIPWithPort(inputValue)) {
     if (!inputValue.startsWith("http://")) {
       inputValue = `http://${inputValue}`;
     }
