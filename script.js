@@ -95,8 +95,6 @@ async function navigateToURL() {
 
     const toRedirectUrl = validUrl.join("/");
     window.open(toRedirectUrl, "_blank");
-
-    console.log(validUrl, toRedirectUrl);
   } else {
     // If no valid TLD, perform Ecosia search
     const searchQuery = encodeURIComponent(inputValue); // Encode the search query
