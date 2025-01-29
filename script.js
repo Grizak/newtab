@@ -1,4 +1,3 @@
-// Select the input and button elements
 const urlInput = document.getElementById("urlinput");
 const goButton = document.getElementById("goButton");
 const messageElement = document.getElementById("message");
@@ -18,15 +17,6 @@ async function fetchValidTLDs() {
   // Split the text by new lines and remove any lines that start with a '#'
   const tlds = text.split("\n").filter((line) => line && !line.startsWith("#"));
   return tlds.map((tld) => tld.toLowerCase()); // Convert all TLDs to lowercase
-}
-
-function isValidIPWithPort(input) {
-  const ipv4WithPortPattern =
-    /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(:(6553[0-5]|655[0-2][0-9]|65[0-4][0-9][0-9]|[0-5]?[0-9]{1,4}))?$/;
-  const ipv6WithPortPattern =
-    /^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}(([0-9]{1,3}\.){3,3}[0-9]{1,3})|([0-9a-fA-F]{1,4}:){1,4}:(([0-9]{1,3}\.){3,3}[0-9]{1,3}))(:(6553[0-5]|655[0-2][0-9]|65[0-4][0-9][0-9]|[0-5]?[0-9]{1,4}))?$/;
-
-  return ipv4WithPortPattern.test(input) || ipv6WithPortPattern.test(input);
 }
 
 // Function to extract the TLD from a URL
@@ -60,7 +50,133 @@ function clearMessage() {
   messageElement.classList = "";
 }
 
-// Function to navigate to the URL or Ecosia search
+function clearSL() {
+  const sl = document.getElementById("suggestionsList");
+  sl.innerHTML = "";
+}
+
+// Debounce function to limit the rate at which a function is called
+function debounce(func, delay) {
+  let timeout;
+  return function (...args) {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func.apply(this, args), delay);
+  };
+}
+
+let selectedIndex = 0; // Keeps track of the currently selected item in the list
+
+const fetchSuggestions = debounce(function () {
+  const query = this.value;
+  const suggestionsList = document.getElementById("suggestionsList");
+
+  // Clear the previous suggestions
+  suggestionsList.innerHTML = "";
+
+  if (query.length >= 2) {
+    fetch(
+      `https://api.datamuse.com/sug?s=${encodeURIComponent(query)}&max=10`,
+      {
+        method: "GET",
+      }
+    )
+      .then((response) => response.json())
+      .then((data) => {
+        // Add the current query as the first item in the list
+        const firstItem = document.createElement("li");
+        firstItem.textContent = query;
+        firstItem.classList.add("current-query");
+        firstItem.classList.add("selected");
+        firstItem.addEventListener("click", function () {
+          urlInput.value = this.textContent;
+          suggestionsList.innerHTML = ""; // Clear suggestions after selection
+          navigateToURL();
+        });
+        suggestionsList.appendChild(firstItem);
+
+        // Add the rest of the suggestions below the current query
+        data.forEach((item, index) => {
+          const li = document.createElement("li");
+          li.textContent = item.word;
+          li.addEventListener("click", function () {
+            urlInput.value = this.textContent;
+            suggestionsList.innerHTML = ""; // Clear suggestions after selection
+            navigateToURL();
+          });
+          suggestionsList.appendChild(li);
+        });
+
+        // Set focus on the first item after suggestions are added
+        selectedIndex = 0; // Reset selected index
+      })
+      .catch((error) => {
+        console.error("Error fetching suggestions:", error);
+      });
+  } else {
+    suggestionsList.innerHTML = ""; // Clear suggestions if the query is too short
+  }
+}, 300);
+
+urlInput.addEventListener("input", fetchSuggestions);
+
+urlInput.addEventListener("keydown", (event) => {
+  const suggestionsList = document.getElementById("suggestionsList");
+  const items = suggestionsList.getElementsByTagName("li");
+
+  if (event.key === "ArrowDown") {
+    if (selectedIndex < items.length - 1) {
+      selectedIndex++;
+      updateSelectedItem(items);
+
+      event.preventDefault();
+    }
+  } else if (event.key === "ArrowUp") {
+    event.preventDefault();
+    if (selectedIndex > 0) {
+      selectedIndex--;
+      updateSelectedItem(items);
+    }
+  } else if (event.key === "Enter") {
+    if (selectedIndex >= 0) {
+      event.preventDefault();
+      urlInput.value = items[selectedIndex].textContent;
+      suggestionsList.innerHTML = ""; // Clear suggestions after selection
+      navigateToURL();
+    }
+  } else if (event.key === "Escape") {
+    event.preventDefault();
+    suggestionsList.innerHTML = ""; // Close suggestions list without selecting anything
+  }
+});
+
+function updateSelectedItem(items) {
+  // Remove the 'selected' class from all items
+  Array.from(items).forEach((item) => item.classList.remove("selected"));
+
+  // Add the 'selected' class to the currently focused item
+  if (selectedIndex >= 0 && selectedIndex < items.length) {
+    items[selectedIndex].classList.add("selected");
+  }
+}
+
+// Optionally, add a style for the selected item:
+const style = document.createElement("style");
+style.innerHTML = `
+    .selected {
+      background-color: #1affff; /* Highlight color */
+      color: black; /* Change text color for contrast */
+    }
+    .current-query {
+      font-weight: bold;
+      color:rgb(13, 90, 90);
+    }
+  `;
+document.head.appendChild(style);
+
+// Event listener for input field
+urlInput.addEventListener("input", fetchSuggestions);
+
+// Navigating based on input
 async function navigateToURL() {
   let inputValue = urlInput.value.trim(); // Get the input value and trim spaces
   clearMessage();
@@ -85,26 +201,11 @@ async function navigateToURL() {
     return;
   }
 
-  if (isValidIPWithPort(inputValue)) {
-    if (!inputValue.startsWith("http://")) {
-      inputValue = `http://${inputValue}`;
-    }
-
-    window.open(inputValue, "_blank");
-
-    urlInput.value = ""; // Reset the input element to empty when loading url
-    urlInput.focus(); // Set the text marker to be on the input element
-    return;
-  }
-
-  // Get the valid TLDs
+  // Handle TLD and other checks like before
   const validTLDs = await fetchValidTLDs();
-
-  // Check if the input is a valid TLD or a search term
   const tld = extractTLD(inputValue);
 
   if (tld && validTLDs.includes(tld)) {
-    // If TLD is valid, construct a full URL
     let validUrl =
       inputValue.startsWith("http://") || inputValue.startsWith("https://")
         ? inputValue
@@ -117,7 +218,7 @@ async function navigateToURL() {
     const toRedirectUrl = validUrl.join("/");
     window.open(toRedirectUrl, "_blank");
   } else {
-    // If no valid TLD, perform Ecosia search
+    // Perform Ecosia search if no valid TLD found
     const searchQuery = encodeURIComponent(inputValue); // Encode the search query
     window.open(`https://www.ecosia.org/search?q=${searchQuery}`, "_blank");
   }
@@ -126,20 +227,16 @@ async function navigateToURL() {
   urlInput.focus(); // Set the text marker to be on the input element
 }
 
-// Add event listeners
-goButton.addEventListener("click", navigateToURL);
-urlInput.addEventListener("keypress", (event) => {
-  if (event.key === "Enter") {
-    event.preventDefault(); // Prevent form submission
+window.addEventListener("DOMContentLoaded", () => {
+  urlInput.focus();
+});
+
+urlInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
     navigateToURL();
   }
 });
 
-urlInput.addEventListener("input", () => {
-  urlInput.focus();
-});
-
-// Set focus on the search input when the page loads
-document.addEventListener("DOMContentLoaded", () => {
-  urlInput.focus();
+goButton.addEventListener("click", () => {
+  navigateToURL();
 });
