@@ -88,9 +88,10 @@ body {
 }
 .current-query {
   font-weight: bold;
-  color:rgb(13, 90, 90);
+  color: rgb(13, 90, 90);
 }
 .valid {
   color: #222;
   font-weight: 1000;
+  background-color: #03ef32;
 }
