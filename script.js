@@ -13,6 +13,10 @@ async function fetchValidTLDs() {
   const text = await response.text();
   const tlds = text.split("\n").filter(line => line && !line.startsWith("#")).map(tld => tld.toLowerCase());
 
+  setTimeout(() => {
+    localstorage.clearItem("validTLDs");
+  }, 1000 * 60 * 60);
+
   localStorage.setItem("validTLDs", JSON.stringify(tlds));
   return tlds;
 }
