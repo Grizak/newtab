@@ -4,19 +4,17 @@ const messageElement = document.getElementById("message");
 
 // Function to fetch the list of valid TLDs from the IANA database
 async function fetchValidTLDs() {
-  const response = await fetch(
-    "https://data.iana.org/TLD/tlds-alpha-by-domain.txt"
-  );
+  const cachedTLDs = localStorage.getItem("validTLDs");
+  if (cachedTLDs) return JSON.parse(cachedTLDs);
 
-  if (!response.ok) {
-    console.error("Failed to fetch TLDs");
-    return [];
-  }
+  const response = await fetch("https://data.iana.org/TLD/tlds-alpha-by-domain.txt");
+  if (!response.ok) return [];
 
   const text = await response.text();
-  // Split the text by new lines and remove any lines that start with a '#'
-  const tlds = text.split("\n").filter((line) => line && !line.startsWith("#"));
-  return tlds.map((tld) => tld.toLowerCase()); // Convert all TLDs to lowercase
+  const tlds = text.split("\n").filter(line => line && !line.startsWith("#")).map(tld => tld.toLowerCase());
+
+  localStorage.setItem("validTLDs", JSON.stringify(tlds));
+  return tlds;
 }
 
 // Function to extract the TLD from a URL
@@ -47,7 +45,7 @@ function displayMessage(message, classToAdd) {
 
 function clearMessage() {
   messageElement.textContent = "";
-  messageElement.classList = "";
+  messageElement.className = "";
 }
 
 function clearSL() {
@@ -92,6 +90,12 @@ const fetchSuggestions = debounce(function () {
           suggestionsList.innerHTML = ""; // Clear suggestions after selection
           navigateToURL();
         });
+        fetchValidTLDs().then(validTLDs => {
+          if (validTLDs.includes(extractTLD(query))) {
+            firstItem.classList.add("valid");
+          }
+        });        
+        console.log(firstItem)
         suggestionsList.appendChild(firstItem);
 
         // Add the rest of the suggestions below the current query
@@ -115,6 +119,7 @@ const fetchSuggestions = debounce(function () {
   } else {
     suggestionsList.innerHTML = ""; // Clear suggestions if the query is too short
   }
+  clearMessage();
 }, 300);
 
 urlInput.addEventListener("input", fetchSuggestions);
@@ -146,6 +151,10 @@ urlInput.addEventListener("keydown", (event) => {
   } else if (event.key === "Escape") {
     event.preventDefault();
     suggestionsList.innerHTML = ""; // Close suggestions list without selecting anything
+  } else if (event.key === "Tab") { // If tab key pressed, select the item and put it in the input, but don't navigate
+    event.preventDefault();
+    urlInput.value = items[selectedIndex].textContent;
+    suggestionsList.innerHTML = ""; 
   }
 });
 
@@ -158,20 +167,6 @@ function updateSelectedItem(items) {
     items[selectedIndex].classList.add("selected");
   }
 }
-
-// Optionally, add a style for the selected item:
-const style = document.createElement("style");
-style.innerHTML = `
-    .selected {
-      background-color: #1affff; /* Highlight color */
-      color: black; /* Change text color for contrast */
-    }
-    .current-query {
-      font-weight: bold;
-      color:rgb(13, 90, 90);
-    }
-  `;
-document.head.appendChild(style);
 
 // Event listener for input field
 urlInput.addEventListener("input", fetchSuggestions);
@@ -224,17 +219,14 @@ async function navigateToURL() {
   }
 
   urlInput.value = ""; // Reset the input element to empty when loading url
+  clearMessage();
+  clearSL();
   urlInput.focus(); // Set the text marker to be on the input element
 }
 
 window.addEventListener("DOMContentLoaded", () => {
   urlInput.focus();
-});
-
-urlInput.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") {
-    navigateToURL();
-  }
+  fetchValidTLDs();
 });
 
 goButton.addEventListener("click", () => {

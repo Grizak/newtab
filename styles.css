@@ -81,3 +81,16 @@ body {
 #suggestionsList li:hover {
   background-color: #f0f0f0;
 }
+
+.selected {
+  background-color: #1affff; /* Highlight color */
+  color: black; /* Change text color for contrast */
+}
+.current-query {
+  font-weight: bold;
+  color:rgb(13, 90, 90);
+}
+.valid {
+  color: #222;
+  font-weight: 1000;
+}
