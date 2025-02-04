@@ -124,7 +124,7 @@ const fetchSuggestions = debounce(function () {
     suggestionsList.innerHTML = ""; // Clear suggestions if the query is too short
   }
   clearMessage();
-}, 300);
+}, 100);
 
 urlInput.addEventListener("input", fetchSuggestions);
 
