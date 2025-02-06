@@ -110,8 +110,7 @@ const fetchSuggestions = debounce(function () {
           if (validTLDs.includes(extractTLD(query))) {
             firstItem.classList.add("valid");
           }
-        });        
-        console.log(firstItem)
+        });
         suggestionsList.appendChild(firstItem);
 
         // Add the rest of the suggestions below the current query
