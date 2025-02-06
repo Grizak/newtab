@@ -4,21 +4,33 @@ const messageElement = document.getElementById("message");
 
 // Function to fetch the list of valid TLDs from the IANA database
 async function fetchValidTLDs() {
-  const cachedTLDs = localStorage.getItem("validTLDs");
-  if (cachedTLDs) return JSON.parse(cachedTLDs);
+  const cachedData = localStorage.getItem("validTLDs");
+  if (cachedData) {
+    const { tlds, expiry } = JSON.parse(cachedData);
+    if (Date.now() < expiry) {
+      return tlds; // Return cached TLDs if they haven't expired
+    }
+  }
 
-  const response = await fetch("https://data.iana.org/TLD/tlds-alpha-by-domain.txt");
-  if (!response.ok) return [];
+  // Fetch fresh data from IANA
+  try {
+    const response = await fetch("https://data.iana.org/TLD/tlds-alpha-by-domain.txt");
+    if (!response.ok) throw new Error("Failed to fetch TLDs");
 
-  const text = await response.text();
-  const tlds = text.split("\n").filter(line => line && !line.startsWith("#")).map(tld => tld.toLowerCase());
+    const text = await response.text();
+    const tlds = text.split("\n").filter(line => line && !line.startsWith("#")).map(tld => tld.toLowerCase());
 
-  setTimeout(() => {
-    localstorage.clearItem("validTLDs");
-  }, 1000 * 60 * 60);
+    // Store TLDs in localStorage with an expiration time of 1 day
+    localStorage.setItem("validTLDs", JSON.stringify({
+      tlds,
+      expiry: Date.now() + 24 * 60 * 60 * 1000 // Expiry set to 24 hours from now
+    }));
 
-  localStorage.setItem("validTLDs", JSON.stringify(tlds));
-  return tlds;
+    return tlds;
+  } catch (error) {
+    console.error("Error fetching valid TLDs:", error);
+    return [];
+  }
 }
 
 // Function to extract the TLD from a URL
