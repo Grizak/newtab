@@ -2,6 +2,15 @@ const urlInput = document.getElementById("urlinput");
 const goButton = document.getElementById("goButton");
 const messageElement = document.getElementById("message");
 
+function checkIp(query) {
+  const ipv4regex =
+    /^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+  const ipv6regex =
+    /^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$|^([0-9a-fA-F]{1,4}:){1,7}:$|^([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}$|^([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}$|^([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}$|^([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}$|^([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}$|^([0-9a-fA-F]{1,4}:){1}(:[0-9a-fA-F]{1,4}){1,6}$|^:((:[0-9a-fA-F]{1,4}){1,7}|:)$/;
+
+  return ipv4regex.test(query) || ipv6regex.test(query);
+}
+
 // Function to fetch the list of valid TLDs from the IANA database
 async function fetchValidTLDs() {
   const cachedData = localStorage.getItem("validTLDs");
@@ -14,17 +23,25 @@ async function fetchValidTLDs() {
 
   // Fetch fresh data from IANA
   try {
-    const response = await fetch("https://data.iana.org/TLD/tlds-alpha-by-domain.txt");
+    const response = await fetch(
+      "https://data.iana.org/TLD/tlds-alpha-by-domain.txt"
+    );
     if (!response.ok) throw new Error("Failed to fetch TLDs");
 
     const text = await response.text();
-    const tlds = text.split("\n").filter(line => line && !line.startsWith("#")).map(tld => tld.toLowerCase());
+    const tlds = text
+      .split("\n")
+      .filter((line) => line && !line.startsWith("#"))
+      .map((tld) => tld.toLowerCase());
 
     // Store TLDs in localStorage with an expiration time of 1 day
-    localStorage.setItem("validTLDs", JSON.stringify({
-      tlds,
-      expiry: Date.now() + 24 * 60 * 60 * 1000 // Expiry set to 24 hours from now
-    }));
+    localStorage.setItem(
+      "validTLDs",
+      JSON.stringify({
+        tlds,
+        expiry: Date.now() + 24 * 60 * 60 * 1000, // Expiry set to 24 hours from now
+      })
+    );
 
     return tlds;
   } catch (error) {
@@ -81,7 +98,7 @@ function debounce(func, delay) {
 let selectedIndex = 0; // Keeps track of the currently selected item in the list
 
 const fetchSuggestions = debounce(function () {
-  const query = this.value;
+  const query = urlInput.value;
   const suggestionsList = document.getElementById("suggestionsList");
 
   // Clear the previous suggestions
@@ -102,12 +119,16 @@ const fetchSuggestions = debounce(function () {
         firstItem.classList.add("current-query");
         firstItem.classList.add("selected");
         firstItem.addEventListener("click", function () {
-          urlInput.value = this.textContent;
+          urlInput.value = firstItem.textContent;
           suggestionsList.innerHTML = ""; // Clear suggestions after selection
           navigateToURL();
         });
-        fetchValidTLDs().then(validTLDs => {
-          if (validTLDs.includes(extractTLD(query))) {
+        fetchValidTLDs().then((validTLDs) => {
+          if (
+            validTLDs.includes(extractTLD(query)) ||
+            query.includes("localhost") ||
+            checkIp(query)
+          ) {
             firstItem.classList.add("valid");
           }
         });
@@ -166,10 +187,12 @@ urlInput.addEventListener("keydown", (event) => {
   } else if (event.key === "Escape") {
     event.preventDefault();
     suggestionsList.innerHTML = ""; // Close suggestions list without selecting anything
-  } else if (event.key === "Tab") { // If tab key pressed, select the item and put it in the input, but don't navigate
+  } else if (event.key === "Tab") {
+    // If tab key pressed, select the item and put it in the input, but don't navigate
     event.preventDefault();
     urlInput.value = items[selectedIndex].textContent;
-    suggestionsList.innerHTML = ""; 
+    clearSL();
+    fetchSuggestions();
   }
 });
 
@@ -184,7 +207,7 @@ function updateSelectedItem(items) {
 }
 
 // Event listener for input field
-urlInput.addEventListener("input", fetchSuggestions);
+urlInput.addEventListener("input", fetchSuggestions());
 
 // Navigating based on input
 async function navigateToURL() {
@@ -201,6 +224,17 @@ async function navigateToURL() {
     inputValue.startsWith("http://localhost")
   ) {
     if (!inputValue.startsWith("http://")) {
+      inputValue = `http://${inputValue}`;
+    }
+    window.open(inputValue, "_blank");
+
+    urlInput.value = ""; // Reset the input element to empty when loading url
+    urlInput.focus(); // Set the text marker to be on the input element
+    return;
+  }
+
+  if (checkIp(inputValue)) {
+    if (!inputValue.includes("://")) {
       inputValue = `http://${inputValue}`;
     }
 
