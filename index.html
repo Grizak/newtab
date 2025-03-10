@@ -1,24 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' http://127.0.0.1:5501; connect-src 'self' https://data.iana.org https://api.datamuse.com; script-src 'self'; style-src 'self';">
-  <meta name="X-UA-Compatible" content="IE=edge">
-  <meta name="author" content="Isak Grönlund">
-  <meta name="description" content="A simple web search website with ecosia as the search enigne">
-  <meta name="robots" content="noindex, nofollow">
-  <title>New Tab</title>
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-  <div class="home-page">
-    <input type="text" id="urlinput" class="url-input" placeholder="Type URL or search with Ecosia" autofocus>
-    <ul id="suggestionsList"></ul>
-    <p id="message"></p>
-    <button id="goButton" class="go-button">Go</button>
-  </div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self' http://127.0.0.1:5501; connect-src 'self' https://data.iana.org https://api.datamuse.com; script-src 'self' 'unsafe-inline'; style-src 'self';"
+    />
+    <meta name="X-UA-Compatible" content="IE=edge" />
+    <meta name="author" content="Isak Grönlund" />
+    <meta
+      name="description"
+      content="A simple web search website with ecosia as the search enigne"
+    />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>New Tab</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="home-page">
+      <input
+        type="text"
+        id="urlinput"
+        class="url-input"
+        placeholder="Type URL or search with Ecosia"
+        autofocus
+      />
+      <ul id="suggestionsList"></ul>
+      <p id="message"></p>
+      <button id="goButton" class="go-button">Go</button>
+    </div>
 
-  <script src="script.js"></script>
-</body>
+    <script src="script.js"></script>
+  </body>
 </html>
