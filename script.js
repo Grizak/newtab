@@ -232,7 +232,8 @@ async function navigateToURL() {
 
   clearMessage();
   clearSL();
-  urlInput.focus();
+  urlInput.value = "";
+  urlInput.focus()
 }
 
 window.addEventListener("DOMContentLoaded", () => {
