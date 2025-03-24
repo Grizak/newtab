@@ -1,9 +1,7 @@
-const urlInput = document.getElementById("urlInput");
+const urlInput = document.getElementById("urlinput");
 const suggestionsList = document.getElementById("suggestionsList");
 let validTLDs = null;
 let selectedIndex = -1;
-
-console.log(urlInput);
 
 // Fetch TLDs and store in memory
 async function fetchValidTLDs() {
