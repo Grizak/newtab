@@ -11,7 +11,7 @@ async function fetchValidTLDs() {
     if (!response.ok) throw new Error("Failed to fetch TLDs");
     validTLDs = (await response.text())
       .split("\n")
-      .slice(1) // Skip first line (header)
+      .filter(tld => tld.startsWith("#"))
       .map(tld => tld.trim().toLowerCase());
     return validTLDs;
   } catch (error) {
