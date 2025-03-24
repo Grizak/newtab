@@ -1,244 +1,136 @@
-const urlInput = document.getElementById("urlinput");
-const goButton = document.getElementById("goButton");
-const messageElement = document.getElementById("message");
+const urlInput = document.getElementById("urlInput");
+const suggestionsList = document.getElementById("suggestionsList");
+let validTLDs = null;
+let selectedIndex = -1;
 
-function checkIp(query) {
-  const ipv4regex =
-    /^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)?(:\d{1,5})?$/;
-  const ipv6regex =
-    /^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}(:\d{1,5})?$|^([0-9a-fA-F]{1,4}:){1,7}:(:\d{1,5})?$|^([0-9a-fA-F]{1,4}:){1,6}([0-9a-fA-F]{1,4})?(:\d{1,5})?$|^([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}(:\d{1,5})?$|^([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}(:\d{1,5})?$|^([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}(:\d{1,5})?$|^([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}(:\d{1,5})?$|^([0-9a-fA-F]{1,4}:){1}(:[0-9a-fA-F]{1,4}){1,6}(:\d{1,5})?$|^:((:[0-9a-fA-F]{1,4}){1,7}|:)(:\d{1,5})?$/;
-  return ipv4regex.test(query) || ipv6regex.test(query);
-}
-
+// Fetch TLDs and store in memory
 async function fetchValidTLDs() {
-  const cachedData = localStorage.getItem("validTLDs");
-  if (cachedData) {
-    const { tlds, expiry } = JSON.parse(cachedData);
-    if (Date.now() < expiry) {
-      return tlds;
-    }
-  }
-
+  if (validTLDs) return validTLDs;
   try {
-    const response = await fetch(
-      "https://data.iana.org/TLD/tlds-alpha-by-domain.txt"
-    );
+    const response = await fetch("https://data.iana.org/TLD/tlds-alpha-by-domain.txt");
     if (!response.ok) throw new Error("Failed to fetch TLDs");
-
-    const text = await response.text();
-    const tlds = text
+    validTLDs = (await response.text())
       .split("\n")
-      .filter((line) => line && !line.startsWith("#"))
-      .map((tld) => tld.toLowerCase());
-
-    localStorage.setItem(
-      "validTLDs",
-      JSON.stringify({ tlds, expiry: Date.now() + 24 * 60 * 60 * 1000 })
-    );
-    return tlds;
+      .slice(1) // Skip first line (header)
+      .map(tld => tld.trim().toLowerCase());
+    return validTLDs;
   } catch (error) {
-    console.error("Error fetching valid TLDs:", error);
+    console.error("Error fetching TLDs:", error);
     return [];
   }
 }
 
+// Extract TLD from a URL
 function extractTLD(url) {
   try {
-    const parsedUrl = new URL(url.includes("://") ? url : `https://${url}`);
-    const hostnameParts = parsedUrl.hostname.split(".");
-    return hostnameParts.length > 1
-      ? hostnameParts[hostnameParts.length - 1]
-      : null;
-  } catch (e) {
+    const hostname = new URL(url.includes("://") ? url : `https://${url}`).hostname;
+    return hostname.split(".").pop().toLowerCase();
+  } catch {
     return null;
   }
 }
 
-function storeQuery(query) {
-  let storedQueries = JSON.parse(localStorage.getItem("storedQueries")) || [];
-  if (!storedQueries.includes(query)) {
-    storedQueries.unshift(query);
-    if (storedQueries.length > 10) storedQueries.pop();
-    localStorage.setItem("storedQueries", JSON.stringify(storedQueries));
-  }
+// Check if the input is a valid IP address
+function checkIp(input) {
+  return /^(\d{1,3}\.){3}\d{1,3}$|^([a-fA-F0-9:]+:+)+[a-fA-F0-9]+$/.test(input);
 }
 
-function getStoredQueries() {
-  return JSON.parse(localStorage.getItem("storedQueries")) || [];
-}
-
+// Fetch word suggestions
 async function fetchDatamuseSuggestions(query) {
   try {
-    const response = await fetch(
-      `https://api.datamuse.com/sug?s=${encodeURIComponent(query)}`
-    );
+    const response = await fetch(`https://api.datamuse.com/sug?s=${encodeURIComponent(query)}`);
     if (!response.ok) throw new Error("Failed to fetch suggestions");
-    const data = await response.json();
-    return data.map((item) => item.word);
+    return (await response.json()).map(item => item.word);
   } catch (error) {
-    console.error("Error fetching suggestions from Datamuse:", error);
+    console.warn("Datamuse API error:", error);
     return [];
   }
 }
 
-async function fetchSuggestions() {
-  const query = urlInput.value;
-  const suggestionsList = document.getElementById("suggestionsList");
+// Generate suggestions
+async function fetchSuggestions(query) {
+  if (!query) return;
+  
+  const [wordSuggestions, tlds] = await Promise.all([
+    fetchDatamuseSuggestions(query),
+    fetchValidTLDs()
+  ]);
+  
+  const suggestions = new Set(wordSuggestions);
+  
+  // Check if input is a domain
+  if (query.includes(".")) {
+    const tld = extractTLD(query);
+    if (tlds.includes(tld)) {
+      suggestions.add(query);
+    }
+  }
+  
+  updateSuggestionsList(Array.from(suggestions));
+}
+
+// Update UI for suggestions
+function updateSuggestionsList(suggestions) {
   suggestionsList.innerHTML = "";
-
-  // Add the current query as the first item in the list
-  const firstItem = document.createElement("li");
-  firstItem.textContent = query;
-  firstItem.classList.add("current-query");
-  firstItem.classList.add("selected");
-  firstItem.addEventListener("click", function () {
-    urlInput.value = firstItem.textContent;
-    suggestionsList.innerHTML = ""; // Clear suggestions after selection
-    navigateToURL();
-  });
-  await fetchValidTLDs().then((validTLDs) => {
-    if (
-      validTLDs.includes(extractTLD(query)) ||
-      query.includes("localhost") ||
-      checkIp(query)
-    ) {
-      firstItem.classList.add("valid");
-    }
-  });
-  suggestionsList.appendChild(firstItem);
-
-  if (query.length >= 2) {
-    let storedQueries = getStoredQueries();
-    let suggestions = [...storedQueries];
-
-    if (suggestions.length < 15) {
-      const extraSuggestions = await fetchDatamuseSuggestions(query);
-      suggestions = [...new Set([...suggestions, ...extraSuggestions])].slice(
-        0,
-        15
-      );
-    }
-
-    suggestions.forEach((suggestion) => {
-      const li = document.createElement("li");
-      li.textContent = suggestion;
-      li.addEventListener("click", function () {
-        urlInput.value = suggestion;
-        clearSL();
-        navigateToURL();
-      });
-      suggestionsList.appendChild(li);
+  selectedIndex = -1;
+  if (!suggestions.length) return;
+  
+  const fragment = document.createDocumentFragment();
+  suggestions.forEach((suggestion, index) => {
+    const item = document.createElement("li");
+    item.textContent = suggestion;
+    item.addEventListener("click", () => {
+      urlInput.value = suggestion;
+      navigateToURL();
     });
-  }
+    fragment.appendChild(item);
+  });
+  suggestionsList.appendChild(fragment);
 }
 
-function displayMessage(message, classToAdd) {
-  if (messageElement) {
-    messageElement.textContent = message;
-    messageElement.classList.add(classToAdd);
+// Navigate to a URL or search
+function navigateToURL() {
+  const query = urlInput.value.trim();
+  if (!query) return;
+  
+  if (query.includes(".") || checkIp(query)) {
+    window.location.href = `https://${query}`;
   } else {
-    alert(message);
+    window.location.href = `https://www.ecosia.org/search?q=${encodeURIComponent(query)}`;
   }
 }
 
-function clearMessage() {
-  messageElement.textContent = "";
-  messageElement.className = "";
-}
-
-function clearSL() {
-  document.getElementById("suggestionsList").innerHTML = "";
-}
-
+// Debounce input event
 function debounce(func, delay) {
   let timeout;
   return function (...args) {
+    const context = this;
     clearTimeout(timeout);
-    timeout = setTimeout(() => func.apply(this, args), delay);
+    timeout = setTimeout(() => func.apply(context, args), delay);
   };
 }
 
-let selectedIndex = 0;
+const debouncedFetchSuggestions = debounce(fetchSuggestions, 300);
 
-urlInput.addEventListener("input", debounce(fetchSuggestions, 100));
+// Event Listeners
+urlInput.addEventListener("input", () => debouncedFetchSuggestions(urlInput.value));
 
-urlInput.addEventListener("keydown", (event) => {
-  const suggestionsList = document.getElementById("suggestionsList");
-  const items = suggestionsList.getElementsByTagName("li");
+urlInput.addEventListener("keydown", (e) => {
+  const items = suggestionsList.querySelectorAll("li");
+  if (!items.length) return;
 
-  if (event.key === "ArrowDown") {
-    if (selectedIndex < items.length - 1) {
-      selectedIndex++;
-      updateSelectedItem(items);
-      event.preventDefault();
-    }
-  } else if (event.key === "ArrowUp") {
-    if (selectedIndex > 0) {
-      selectedIndex--;
-      updateSelectedItem(items);
-      event.preventDefault();
-    }
-  } else if (event.key === "Enter") {
+  if (e.key === "ArrowDown") {
+    selectedIndex = (selectedIndex + 1) % items.length;
+  } else if (e.key === "ArrowUp") {
+    selectedIndex = (selectedIndex - 1 + items.length) % items.length;
+  } else if (e.key === "Enter") {
     if (selectedIndex >= 0) {
-      event.preventDefault();
       urlInput.value = items[selectedIndex].textContent;
-      clearSL();
-      navigateToURL();
     }
+    navigateToURL();
   }
+
+  items.forEach((item, index) => {
+    item.classList.toggle("selected", index === selectedIndex);
+  });
 });
-
-function updateSelectedItem(items) {
-  Array.from(items).forEach((item) => item.classList.remove("selected"));
-  if (selectedIndex >= 0 && selectedIndex < items.length) {
-    items[selectedIndex].classList.add("selected");
-  }
-}
-
-async function navigateToURL() {
-  let inputValue = urlInput.value.trim();
-  clearMessage();
-
-  if (!inputValue) {
-    displayMessage("Please enter a URL or search term!", "error");
-    return;
-  }
-
-  storeQuery(inputValue);
-
-  if (checkIp(inputValue) || inputValue.startsWith("localhost")) {
-    if (!inputValue.includes("://")) {
-      inputValue = `http://${inputValue}`;
-    }
-    window.open(inputValue, "_blank");
-    return;
-  }
-
-  const validTLDs = await fetchValidTLDs();
-  const tld = extractTLD(inputValue);
-
-  if (tld && validTLDs.includes(tld)) {
-    let validUrl =
-      inputValue.startsWith("http://") || inputValue.startsWith("https://")
-        ? inputValue
-        : `https://${inputValue}`;
-    window.open(validUrl, "_blank");
-  } else {
-    window.open(
-      `https://www.ecosia.org/search?q=${encodeURIComponent(inputValue)}`,
-      "_blank"
-    );
-  }
-
-  clearMessage();
-  clearSL();
-  urlInput.value = "";
-  urlInput.focus()
-}
-
-window.addEventListener("DOMContentLoaded", () => {
-  urlInput.focus();
-  fetchValidTLDs();
-});
-
-goButton.addEventListener("click", navigateToURL);
