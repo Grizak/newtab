@@ -94,9 +94,9 @@ function navigateToURL() {
   if (!query) return;
   
   if (query.includes(".") || checkIp(query)) {
-    window.location.href = `https://${query}`;
+    window.open(`https://${query}`);
   } else {
-    window.location.href = `https://www.ecosia.org/search?q=${encodeURIComponent(query)}`;
+    window.open(`https://www.ecosia.org/search?q=${encodeURIComponent(query)}`);
   }
 }
 
